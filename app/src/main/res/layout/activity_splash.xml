@@ -8,9 +8,9 @@
         <!-- Video Icon -->
         <ImageView
             android:id="@+id/imgLogo"
-            android:layout_width="96dp"
-            android:layout_height="96dp"
-            android:src="@drawable/clapperboard"
+            android:layout_width="90dp"
+            android:layout_height="90dp"
+            android:src="@drawable/ic_music"
             android:background="@drawable/border_design"
             app:layout_constraintBottom_toTopOf="@id/txtAppName"
             app:layout_constraintTop_toTopOf="parent"

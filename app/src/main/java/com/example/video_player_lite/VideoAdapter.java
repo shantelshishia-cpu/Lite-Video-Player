@@ -13,82 +13,99 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.documentfile.provider.DocumentFile;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.bumptech.glide.Glide;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Locale;
 
 public class VideoAdapter extends RecyclerView.Adapter<VideoAdapter.VideoViewHolder> {
-    private  final List<Uri> videoUris;
-    private  String videoName;
-    private Context context;
-    public  VideoAdapter( List<Uri> videoUris, Context context){
-        this.videoUris = videoUris;
+
+    private final List<Uri> videos;
+    private final Context context;
+    private final OnVideoClickListener listener;
+
+    public interface OnVideoClickListener {
+        void onVideoClick(Uri videoUri);
+    }
+
+    public VideoAdapter(List<Uri> videos, Context context, OnVideoClickListener listener) {
+        this.videos = videos;
         this.context = context;
+        this.listener = listener;
     }
 
     @NonNull
     @Override
-    public VideoAdapter.VideoViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_video,parent,false);
-
-
+    public VideoViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        View view = LayoutInflater.from(context)
+                .inflate(R.layout.item_video, parent, false);
         return new VideoViewHolder(view);
     }
 
     @Override
     public void onBindViewHolder(@NonNull VideoViewHolder holder, int position) {
-        Uri videoUri = videoUris.get(position);
-        String videoName = videoUri.getLastPathSegment();
-        holder.textName.setText(videoName);
+        Uri videoUri = videos.get(position);
 
-        // --- MediaMetadataRetriever for real duration and thumbnail ---
+        DocumentFile file = DocumentFile.fromSingleUri(context, videoUri);
+        holder.txtTitle.setText(file != null ? file.getName() : "Unknown");
+
+        // Thumbnail (fast + cached)
+        Glide.with(context)
+                .load(videoUri)
+                .thumbnail(0.1f)
+                .into(holder.imgThumb);
+
+        // Duration
+        MediaMetadataRetriever retriever = new MediaMetadataRetriever();
         try {
-            MediaMetadataRetriever retriever = new MediaMetadataRetriever();
             retriever.setDataSource(context, videoUri);
+            String time = retriever.extractMetadata(
+                    MediaMetadataRetriever.METADATA_KEY_DURATION
+            );
 
-            // Duration
-            String dur = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
-            long durMs = Long.parseLong(dur);
-            long min = durMs / 1000 / 60;
-            long sec = (durMs / 1000) % 60;
-            holder.txtDuration.setText(String.format("%02d:%02d", min, sec));
+            long ms = Long.parseLong(time);
+            long minutes = (ms / 1000) / 60;
+            long seconds = (ms / 1000) % 60;
 
-            // Thumbnail
-            Bitmap thumb = retriever.getFrameAtTime();
-            holder.imgThumbnail.setImageBitmap(thumb);
-
-            retriever.release();
+            holder.txtDuration.setText(
+                    String.format(Locale.getDefault(),
+                            "%02d:%02d", minutes, seconds)
+            );
         } catch (Exception e) {
             holder.txtDuration.setText("--:--");
-            holder.imgThumbnail.setImageResource(R.drawable.media); // fallback image
-            e.printStackTrace();
+        } finally {
+            try {
+                retriever.release();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
 
-        // Click
         holder.itemView.setOnClickListener(v -> {
-            Intent intent = new Intent(context, VideoPlayBackActivity.class);
-            intent.putExtra("videoUri", videoUri);
-            context.startActivity(intent);
+            if (listener != null) {
+                listener.onVideoClick(videoUri);
+            }
         });
-
-
     }
-
 
     @Override
     public int getItemCount() {
-        return videoUris.size();
+        return videos == null ? 0 : videos.size();
     }
 
-    public class VideoViewHolder extends RecyclerView.ViewHolder {
-        TextView textName, txtDuration;
-        ImageView imgThumbnail;
-        public VideoViewHolder(@NonNull View itemView) {
+    static class VideoViewHolder extends RecyclerView.ViewHolder {
+        TextView txtTitle, txtDuration;
+        ImageView imgThumb;
+
+        VideoViewHolder(@NonNull View itemView) {
             super(itemView);
-            textName = itemView.findViewById(R.id.txtTitle);
+            txtTitle = itemView.findViewById(R.id.txtTitle);
             txtDuration = itemView.findViewById(R.id.txtDuration);
-            imgThumbnail = itemView.findViewById(R.id.imgThumb);
+            imgThumb = itemView.findViewById(R.id.imgThumb);
         }
     }
 }
