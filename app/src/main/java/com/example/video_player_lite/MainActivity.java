@@ -40,6 +40,44 @@ import java.util.List;
             super.onCreate(savedInstanceState);
             EdgeToEdge.enable(this);
             setContentView(R.layout.activity_main);
+            SystemHelper systemHelper = new SystemHelper(this);
+            systemHelper.setSystemBars(R.color.black,R.color.black,false);
+
+            /////////////////////////
+            ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.toolbar),
+                    (view, insets) -> {
+
+                        int statusBarHeight =
+                                insets.getInsets(WindowInsetsCompat.Type.statusBars()).top;
+
+                        view.setPadding(
+                                view.getPaddingLeft(),
+                                statusBarHeight,
+                                view.getPaddingRight(),
+                                view.getPaddingBottom()
+                        );
+
+                        return insets;
+                    });
+            ///////////////////////////////////////
+            ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.fabOpenFolder),
+                    (view, insets) -> {
+
+                        int navBarHeight =
+                                insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom;
+
+                        view.setTranslationY(-navBarHeight);
+
+                        return insets;
+                    });
+
+
+
+
+
+
+            //////////////////////////////////////////////
+
 
             recyclerView = findViewById(R.id.recyclerVideos);
             fab = findViewById(R.id.fabOpenFolder);

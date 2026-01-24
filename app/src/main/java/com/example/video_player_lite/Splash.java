@@ -15,6 +15,8 @@ public class Splash extends AppCompatActivity {
     protected void  onCreate(Bundle savedInstanceBundle){
         super.onCreate(savedInstanceBundle);
         setContentView(R.layout.activity_splash);
+        SystemHelper systemHelper = new SystemHelper(this);
+        systemHelper.setSystemBars(R.color.black,R.color.black,false);
 
         // Hide status bar & navigation bar (true fullscreen)
         WindowInsetsControllerCompat controller =
