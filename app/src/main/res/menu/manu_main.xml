@@ -3,8 +3,21 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <item
+        android:id="@+id/action_download"
+        android:icon="@drawable/ic_download"
+        android:title="Download"
+        app:showAsAction="always"/>
+
+    <item
         android:id="@+id/action_search"
         android:icon="@drawable/ic_search"
         android:title="Search"
+        app:showAsAction="always|collapseActionView"
+        app:actionViewClass="androidx.appcompat.widget.SearchView"/>
+
+    <item
+        android:id="@+id/action_exit"
+        android:icon="@drawable/ic_exit"
+        android:title="Exit"
         app:showAsAction="always"/>
 </menu>

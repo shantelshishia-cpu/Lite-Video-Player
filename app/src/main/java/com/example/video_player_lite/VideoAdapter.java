@@ -1,8 +1,6 @@
 package com.example.video_player_lite;
 
 import android.content.Context;
-import android.content.Intent;
-import android.graphics.Bitmap;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import android.view.LayoutInflater;
@@ -10,7 +8,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.documentfile.provider.DocumentFile;
@@ -19,12 +16,14 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
 public class VideoAdapter extends RecyclerView.Adapter<VideoAdapter.VideoViewHolder> {
 
-    private final List<Uri> videos;
+    private List<Uri> videos;
+    private List<Uri> videosFull;
     private final Context context;
     private final OnVideoClickListener listener;
 
@@ -34,8 +33,27 @@ public class VideoAdapter extends RecyclerView.Adapter<VideoAdapter.VideoViewHol
 
     public VideoAdapter(List<Uri> videos, Context context, OnVideoClickListener listener) {
         this.videos = videos;
+        this.videosFull = new ArrayList<>(videos);
         this.context = context;
         this.listener = listener;
+    }
+
+    public void updateList(List<Uri> newList) {
+        this.videos = newList;
+        this.videosFull = new ArrayList<>(newList);
+        notifyDataSetChanged();
+    }
+
+    public void filter(String text) {
+        List<Uri> filteredList = new ArrayList<>();
+        for (Uri uri : videosFull) {
+            DocumentFile file = DocumentFile.fromSingleUri(context, uri);
+            if (file != null && file.getName() != null && file.getName().toLowerCase().contains(text.toLowerCase())) {
+                filteredList.add(uri);
+            }
+        }
+        this.videos = filteredList;
+        notifyDataSetChanged();
     }
 
     @NonNull
@@ -53,13 +71,11 @@ public class VideoAdapter extends RecyclerView.Adapter<VideoAdapter.VideoViewHol
         DocumentFile file = DocumentFile.fromSingleUri(context, videoUri);
         holder.txtTitle.setText(file != null ? file.getName() : "Unknown");
 
-        // Thumbnail (fast + cached)
         Glide.with(context)
                 .load(videoUri)
                 .thumbnail(0.1f)
                 .into(holder.imgThumb);
 
-        // Duration
         MediaMetadataRetriever retriever = new MediaMetadataRetriever();
         try {
             retriever.setDataSource(context, videoUri);
@@ -81,7 +97,7 @@ public class VideoAdapter extends RecyclerView.Adapter<VideoAdapter.VideoViewHol
             try {
                 retriever.release();
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                // Ignore
             }
         }
 
